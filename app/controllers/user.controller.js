@@ -30,6 +30,14 @@ class UserController {
       res 
     );
   }
+
+  getAllUsers = async(req,res) =>{
+    const { startDate } = req.query;
+    return await Interceptor.responseHandler(
+      ()=> this.userService.getAllUsers(startDate),
+      res
+    )
+  }
 }
 
 export default UserController;

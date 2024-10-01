@@ -170,6 +170,69 @@ class UserService {
       return { success: false, message: "Error verifying OTP" };
     }
   };
+
+  getAllUsers = async (startDate) => {
+    try {
+      // Fetch all users from the database to get unique registration dates
+      const allUsers = await user.find({}); // Fetch all users first
+  
+      // Extract unique registration dates from all users
+      const uniqueRegistrationDates = [
+        ...new Set(allUsers.map((user) => user.createdAt.toDateString())), // Extract and filter unique dates
+      ];
+  
+      // Define the query filter based on the provided startDate
+      let query = {};
+  
+      // Use current date if no startDate is provided
+      const currentDate = new Date();
+      
+      // Set the time to 00:00:00 for the query
+      const queryDate = startDate ? new Date(startDate) : currentDate;
+      queryDate.setHours(0, 0, 0, 0); // Set time to midnight for comparison
+  
+      console.log(queryDate, "dateee");
+  
+      query.createdAt = {
+        $gte: queryDate,  // Greater than or equal to startDate (or current date)
+      };
+  
+      // Fetch users based on the date filter
+      const filteredUsers = await user.find(query);
+  
+      // Return the total count of users, registration dates, and user data
+      return {
+        success: true,
+        statustype: "OK",
+        message: filteredUsers.length > 0 ? "Users fetched successfully" : "No users found for the selected date",
+        data: {
+          count: filteredUsers.length,  // Number of users found
+          uniqueRegistrationDates, // Array of unique registration dates from all users
+          data: filteredUsers.map(user => ({
+            id: user._id,
+            lastName:user.lastName,
+            isVerified:user.isVerified,
+            firstName:user.firstName,
+            phone:user.phone,
+            loanAmount:user.loanAmount,
+            email: user.email,
+            registeredAt: user.createdAt.toDateString(),  // Convert to date string for consistent format
+          })),
+        }
+      };
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      return {
+        success: false,
+        statustype: "SERVER_ERROR",
+        message: "Error fetching users",
+      };
+    }
+  };
+  
+  
+  
+
 }
 
 export default UserService;
