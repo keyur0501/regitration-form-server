@@ -16,13 +16,20 @@ class UserController {
 
   // Verify OTP
   verifyOtp = async (req, res) => {
-    const { userId } = req.params; // Assume userId is passed as a URL parameter
-    const { otp } = req.body; // Assume OTP is sent in the request body
+    const { otp, userId } = req.body; // Assume OTP is sent in the request body
     return await Interceptor.responseHandler(
       () => this.userService.verifyOtp(userId, otp),
       res
     );
   };
+
+  resendOtp = async(req,res) =>{
+    const {userId} = req.body;
+    return await Interceptor.responseHandler(
+      () => this.userService.resendOtp(userId),
+      res 
+    );
+  }
 }
 
 export default UserController;

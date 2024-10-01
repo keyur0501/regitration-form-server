@@ -9,5 +9,6 @@ const userController = new UserController(userService);
 
 userRouter.post("/create-user", userController.createUser);
 userRouter.post("/verify-otp", userController.verifyOtp);
+userRouter.post('/resend-otp', userController.resendOtp);
 
 export default userRouter;
