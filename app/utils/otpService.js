@@ -1,30 +1,39 @@
-import twilio from "twilio";
+import dotenv from "dotenv";
+import axios from "axios";
 
-// Load environment variables
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+dotenv.config();
 
-const client = twilio(accountSid, authToken);
+// Send OTP using Fast2SMS
+export const sendSms = async (phoneNumber, otp) => {
+  const API_KEY = process.env.OTP_API_KEY; // Replace with your Fast2SMS API key
 
-export const sendSms = async (to, message) => {
   try {
-    const smsResponse = await client.messages.create({
-      body: message,
-      from: twilioPhoneNumber, // Your Twilio phone number
-      to, // The phone number you're sending the message to
-    });
+    const response = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      {
+        route: "otp",
+        variables_values: otp,
+        numbers: phoneNumber,
+      },
+      {
+        headers: {
+          authorization: API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    console.log(`Message sent to ${to}: ${smsResponse.sid}`);
-    return {
-      success: true,
-      message: "OTP sent successfully",
-    };
+    console.log(response, "response");
+
+    if (response.data.return) {
+      console.log("SMS sent successfully");
+      return { success: true };
+    } else {
+      console.log("Failed to send SMS");
+      return { success: false, message: "Failed to send SMS" };
+    }
   } catch (error) {
-    console.error(`Error sending SMS to ${to}: ${error}`);
-    return {
-      success: false,
-      message: "Failed to send OTP",
-    };
+    console.error("Error sending SMS:", error);
+    return { success: false, message: error.message };
   }
 };

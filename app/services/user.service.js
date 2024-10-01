@@ -1,54 +1,46 @@
 import user from "../models/user.js"; // Assuming your user model is in this directory
-import bcrypt from "bcrypt";
 import crypto from "crypto"; // To generate random OTPs
+import { sendSms } from "../utils/otpService.js";
 
 class UserService {
   constructor() {}
 
-  // Create a new user
+  // Generate a 6-digit OTP
   generateOtp = () => {
-    return crypto.randomInt(100000, 999999).toString(); // Generates a 6-digit OTP
+    return crypto.randomInt(100000, 999999).toString();
   };
 
   // Create a new user with OTP
-  createUser = async ({ firstName, lastName, email, phone, password }) => {
-    try {
-      // Hash the password before saving
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  createUser = async ({ firstName, lastName, email, phone, loanAmount }) => {
+    const otp = this.generateOtp();
+    const otpExpiry = Date.now() + 10 * 60 * 1000;
 
-      // Generate an OTP for verification
-      const otp = this.generateOtp();
-      const otpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
+    const user = await user.findOne({email});
+    if(user)
 
-      // Create a new user
-      const newUser = await user.create({
-        firstName,
-        lastName,
-        email,
-        phone,
-        password: hashedPassword, // Hashed password
-        otp, // Store OTP in user model
-        otpExpiry, // Store OTP expiry
-        isVerified: false, // Set user as not verified initially
-      });
+    const newUser = await user.create({
+      firstName,
+      lastName,
+      email,
+      phone,
+      loanAmount,
+      otp,
+      otpExpiry,
+      isVerified: false,
+    });
 
-      // Send the OTP via Twilio SMS
-      const smsResponse = await sendSms(phone, `Your OTP is: ${otp}`);
-      if (!smsResponse.success) {
-        throw new Error("Failed to send OTP");
-      }
-
-      console.log(`User with email ${email} created and OTP sent`);
-      return {
-        success: true,
-        statustype: "CREATED",
-        data: { userId: user._id },
-        message: "User created successfully, OTP sent for verification",
-      };
-    } catch (err) {
-      return { success: false, message: "Error creating user" };
+    const smsResponse = await sendSms(phone, otp);
+    if (!smsResponse.success) {
+      return { success: false, message: "Error sending OTP" };
     }
+
+    console.log(`User with email ${email} created and OTP sent`);
+    return {
+      success: true,
+      statustype: "CREATED",
+      data: { newUser },
+      message: "User created successfully, OTP sent for verification",
+    };
   };
 
   // Verify OTP
@@ -77,7 +69,7 @@ class UserService {
       verifyUser.isVerified = true;
       verifyUser.otp = null; // Clear the OTP after successful verification
       verifyUser.otpExpiry = null;
-      await user.save();
+      await verifyUser.save(); // Save the updated user
 
       console.log(`User with ID ${userId} successfully verified`);
       return {

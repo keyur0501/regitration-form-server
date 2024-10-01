@@ -20,11 +20,10 @@ const userSchema = new Schema({
   phone: {
     type: String,
     required: true,
-    match: [/^\d{10,15}$/, "Please enter a valid phone number"],
   },
-  password: {
+  loanAmount: {
     type: String,
-    required: true,
+    required: false,
   },
   otp: {
     type: String,

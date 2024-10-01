@@ -7,18 +7,11 @@ class UserController {
 
   // Create a new user
   createUser = async (req, res) => {
-    try {
-      const response = await Interceptor.responseHandler(
-        () => this.userService.createUser(req.body),
-        res
-      );
-      res.status(response.success ? 201 : 500).json(response);
-    } catch (err) {
-      console.error("Error in createUser controller:", err);
+    // Rename res in the response handler to avoid conflict
+    await Interceptor.responseHandler(
+      () => this.userService.createUser(req.body),
       res
-        .status(500)
-        .json({ success: false, message: "Internal Server Error" });
-    }
+    );
   };
 
   // Verify OTP
